@@ -68,10 +68,9 @@
     </p>
 
     <span class="redacted-block">
-      THE KEY IS VAULT-7X3K9 &mdash; APPEND IT TO THE URL.
-      NAVIGATE TO vault-7x3k9.html TO PROCEED.
-      EXAMPLE: https://[your-domain]/vault-7x3k9.html
-      DO NOT SHARE THIS INFORMATION. EYES ONLY.
+      LOCATION KEY: VAULT-7X3K9.
+      APPEND TO CURRENT URL PATH TO ACCESS SECURE CHANNEL.
+      EYES ONLY. DO NOT TRANSMIT.
     </span>
 
     <p>
@@ -237,61 +236,60 @@ if (!localStorage.getItem('s7_start')) {
     if (!AC) return;
 
     var ctx = new AC();
-    if (ctx.state === 'suspended') ctx.resume();
 
-    var unit = 0.10; // 100ms per dot
+    // Resume must resolve before scheduling — browsers suspend new contexts
+    ctx.resume().then(function() {
+      var unit = 0.10; // 100ms per dot
 
-    // Gain node — keyed on/off to produce Morse beeps
-    var gainNode = ctx.createGain();
-    gainNode.gain.value = 0;
-    gainNode.connect(ctx.destination);
+      var gainNode = ctx.createGain();
+      gainNode.gain.value = 0;
+      gainNode.connect(ctx.destination);
 
-    var osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.value = 660; // classic CW tone
-    osc.connect(gainNode);
-    osc.start(ctx.currentTime);
+      var osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = 660;
+      osc.connect(gainNode);
+      osc.start(ctx.currentTime);
 
-    // Build schedule: encode "VAULT 7X3K9"
-    // Space = word gap (7 units). Letters separated by 3 units. Symbols by 1 unit.
-    var message = 'VAULT 7X3K9';
-    var t = ctx.currentTime + 0.4; // brief pause before starting
-    var firstChar = true;
+      // Message encoded as char codes — not stored as a plain string in source
+      var message = [86,65,85,76,84,32,55,88,51,75,57]
+                      .map(function(c){ return String.fromCharCode(c); }).join('');
 
-    var chars = message.toUpperCase().split('');
-    for (var i = 0; i < chars.length; i++) {
-      var ch = chars[i];
+      var t = ctx.currentTime + 0.4;
+      var firstChar = true;
 
-      if (ch === ' ') {
-        // Add 4 extra units — the next letter will add its own 3-unit letter gap,
-        // giving the required 7-unit word gap total.
-        t += unit * 4;
-        continue;
+      var chars = message.split('');
+      for (var i = 0; i < chars.length; i++) {
+        var ch = chars[i];
+
+        if (ch === ' ') {
+          t += unit * 4; // word gap (next letter adds 3 more = 7 total)
+          continue;
+        }
+
+        var code = MORSE[ch];
+        if (!code) continue;
+
+        if (!firstChar) t += unit * 3; // inter-letter gap
+        firstChar = false;
+
+        for (var j = 0; j < code.length; j++) {
+          if (j > 0) t += unit; // inter-element gap
+          var dur = code[j] === '.' ? unit : unit * 3;
+          gainNode.gain.setValueAtTime(0.3, t);
+          t += dur;
+          gainNode.gain.setValueAtTime(0, t);
+        }
       }
 
-      var code = MORSE[ch];
-      if (!code) continue;
+      var endTime = t + 0.4;
+      osc.stop(endTime);
 
-      if (!firstChar) t += unit * 3; // inter-letter gap
-      firstChar = false;
-
-      for (var j = 0; j < code.length; j++) {
-        if (j > 0) t += unit; // inter-element gap
-        var dur = code[j] === '.' ? unit : unit * 3;
-        gainNode.gain.setValueAtTime(0.16, t);
-        t += dur;
-        gainNode.gain.setValueAtTime(0, t);
-      }
-    }
-
-    var endTime = t + 0.4;
-    osc.stop(endTime);
-
-    // Show indicator while Morse is active
-    if (indicator) indicator.classList.add('active');
-    setTimeout(function() {
-      if (indicator) indicator.classList.remove('active');
-    }, (endTime - ctx.currentTime) * 1000);
+      if (indicator) indicator.classList.add('active');
+      setTimeout(function() {
+        if (indicator) indicator.classList.remove('active');
+      }, (endTime - ctx.currentTime) * 1000);
+    });
   };
 })();
 
