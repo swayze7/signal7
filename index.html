@@ -36,6 +36,9 @@
   <div class="audio-fallback" id="audio-fallback">
     [AUDIO FEED UNAVAILABLE &mdash; PROCEED WITH VISUAL ANALYSIS]
   </div>
+  <div class="morse-indicator" id="morse-indicator">
+    <span class="morse-pip"></span> SECONDARY SIGNAL ACTIVE &mdash; CW DETECTED
+  </div>
 
   <hr class="divider">
 
@@ -75,13 +78,20 @@
       Analysts who have reviewed the fragment report <span class="redacted">severe
       disorientation and an inability to account for approximately four hours of
       their working day.</span> Further investigation is classified under
-      Protocol <strong style="color: var(--text);">VAULT-7X3K9</strong>.
+      Protocol <span class="redacted">VAULT-7X3K9</span>.
     </p>
 
     <p>
       The signal continues to broadcast on a <span class="struck">rotating frequency</span>
       at irregular intervals. <span class="redacted">We have been unable to locate the
       source transmitter. It does not appear to be terrestrial.</span>
+    </p>
+
+    <p>
+      <span class="struck">Secondary signal analysis:</span> analysts have flagged an
+      additional <span class="redacted">CW MORSE</span> component embedded within the
+      primary transmission. Source: <span class="redacted">UNKNOWN</span>.
+      Full audio review is strongly recommended before proceeding.
     </p>
 
     <div class="doc-footer">&mdash; END REPORT &mdash;</div>
@@ -110,7 +120,7 @@
     TIP: Not everything hidden stays hidden. Try selecting the redacted text.
   </div>
   <div class="hint" id="hint-2">
-    The answer is a URL path. Look for a protocol designation at the end of the report.
+    The answer is a URL path. Some things only reveal themselves when you look directly at them.
   </div>
 
 </div><!-- /.container -->
@@ -122,6 +132,9 @@
 /* ============================================================
    SIGNAL 7 — index.html script
    ============================================================ */
+
+// ── Shared trigger for Morse module (set below) ────────────
+window._triggerMorse = null;
 
 // ── Record start time ──────────────────────────────────────
 if (!localStorage.getItem('s7_start')) {
@@ -158,6 +171,10 @@ if (!localStorage.getItem('s7_start')) {
   function showFallback() {
     wrap.style.display = 'none';
     fallback.style.display = 'block';
+    // No voice audio — trigger Morse after a delay anyway
+    setTimeout(function() {
+      if (window._triggerMorse) window._triggerMorse();
+    }, 8000);
   }
 
   audio.addEventListener('error', showFallback);
@@ -189,7 +206,93 @@ if (!localStorage.getItem('s7_start')) {
   audio.addEventListener('ended', function() {
     playBtn.textContent = '\u25B6 PLAY TRANSMISSION';
     waveform.classList.remove('active');
+    // Trigger Morse after a brief pause following the voice transmission
+    setTimeout(function() {
+      if (window._triggerMorse) window._triggerMorse();
+    }, 1500);
   });
+})();
+
+// ── Morse code player (Web Audio API) ─────────────────────
+(function() {
+  var MORSE = {
+    'A':'.-',   'B':'-...', 'C':'-.-.', 'D':'-..',  'E':'.',
+    'F':'..-.', 'G':'--.',  'H':'....', 'I':'..',   'J':'.---',
+    'K':'-.-',  'L':'.-..', 'M':'--',   'N':'-.',   'O':'---',
+    'P':'.--.', 'Q':'--.-', 'R':'.-.',  'S':'...',  'T':'-',
+    'U':'..-',  'V':'...-', 'W':'.--',  'X':'-..-', 'Y':'-.--',
+    'Z':'--..',
+    '0':'-----','1':'.----','2':'..---','3':'...--','4':'....-',
+    '5':'.....','6':'-....','7':'--...','8':'---..','9':'----.'
+  };
+
+  var indicator = document.getElementById('morse-indicator');
+  var triggered = false;
+
+  window._triggerMorse = function() {
+    if (triggered) return;
+    triggered = true;
+
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+
+    var ctx = new AC();
+    if (ctx.state === 'suspended') ctx.resume();
+
+    var unit = 0.10; // 100ms per dot
+
+    // Gain node — keyed on/off to produce Morse beeps
+    var gainNode = ctx.createGain();
+    gainNode.gain.value = 0;
+    gainNode.connect(ctx.destination);
+
+    var osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = 660; // classic CW tone
+    osc.connect(gainNode);
+    osc.start(ctx.currentTime);
+
+    // Build schedule: encode "VAULT 7X3K9"
+    // Space = word gap (7 units). Letters separated by 3 units. Symbols by 1 unit.
+    var message = 'VAULT 7X3K9';
+    var t = ctx.currentTime + 0.4; // brief pause before starting
+    var firstChar = true;
+
+    var chars = message.toUpperCase().split('');
+    for (var i = 0; i < chars.length; i++) {
+      var ch = chars[i];
+
+      if (ch === ' ') {
+        // Add 4 extra units — the next letter will add its own 3-unit letter gap,
+        // giving the required 7-unit word gap total.
+        t += unit * 4;
+        continue;
+      }
+
+      var code = MORSE[ch];
+      if (!code) continue;
+
+      if (!firstChar) t += unit * 3; // inter-letter gap
+      firstChar = false;
+
+      for (var j = 0; j < code.length; j++) {
+        if (j > 0) t += unit; // inter-element gap
+        var dur = code[j] === '.' ? unit : unit * 3;
+        gainNode.gain.setValueAtTime(0.16, t);
+        t += dur;
+        gainNode.gain.setValueAtTime(0, t);
+      }
+    }
+
+    var endTime = t + 0.4;
+    osc.stop(endTime);
+
+    // Show indicator while Morse is active
+    if (indicator) indicator.classList.add('active');
+    setTimeout(function() {
+      if (indicator) indicator.classList.remove('active');
+    }, (endTime - ctx.currentTime) * 1000);
+  };
 })();
 
 // ── Answer validation (SHA-256 via SubtleCrypto) ───────────
