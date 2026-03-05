@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>SIGNAL 7 — ACCESS GRANTED</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ── CLEARANCE INTRO SCREEN ─────────────────────────────── -->
+<div id="clearance-screen" aria-hidden="true">
+  <div class="clearance-text">CLEARANCE VERIFIED</div>
+  <div class="clearance-sub">IDENTITY CONFIRMED &mdash; LOADING SECURE CHANNEL</div>
+</div>
+
+<!-- ── VAULT CONTENT (fades in after intro) ───────────────── -->
+<div id="vault-content">
+<div class="container">
+
+  <!-- ── HEADER ─────────────────────────────────────── -->
+  <header>
+    <h1 class="glitch-title-stable">SIGNAL 7 &mdash; ACCESS GRANTED</h1>
+    <div class="status-line">OPERATIVE STATUS: CONFIRMED</div>
+    <div class="timestamp" id="timestamp">SYS:TIME &mdash; SYNCING...</div>
+  </header>
+
+  <hr class="divider">
+
+  <!-- ── AUDIO SECTION ──────────────────────────────── -->
+  <div class="section-label">// SECURE CHANNEL — DEBRIEFING AUDIO //</div>
+
+  <div class="audio-player" id="audio-player-wrap">
+    <audio id="vault-audio" preload="none">
+      <source src="assets/vault-audio.mp3" type="audio/mpeg">
+    </audio>
+    <button class="play-btn" id="play-btn">&#9654; PLAY DEBRIEFING</button>
+    <div class="waveform" id="waveform">
+      <span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+    </div>
+  </div>
+  <div class="audio-fallback" id="audio-fallback">
+    [DEBRIEFING AUDIO UNAVAILABLE &mdash; PROCEED WITH WRITTEN REPORT]
+  </div>
+
+  <hr class="divider">
+
+  <!-- ── DOSSIER ────────────────────────────────────── -->
+  <div class="section-label">// OPERATIVE DOSSIER — SIGNAL 7 COMMAND //</div>
+
+  <div class="dossier">
+
+    <div class="dossier-header">
+      TRANSMISSION: SIGNAL 7 &mdash; DEBRIEF<br>
+      CLASSIFICATION: EYES ONLY<br>
+      CHANNEL: SECURE // AUTHENTICATED
+    </div>
+
+    <div class="status-badge">&#9632; OPERATIVE STATUS: CONFIRMED</div>
+
+    <p>
+      You have successfully decoded the first SIGNAL 7 transmission.
+    </p>
+
+    <p>
+      Time elapsed since intercept: <span class="elapsed-time" id="elapsed-time">CALCULATING...</span>
+    </p>
+
+    <p>
+      Your ability to locate the embedded key demonstrates the perceptual acuity
+      required for continued operations. <span class="redacted">Most subjects do not
+      make it this far. You are not most subjects.</span>
+    </p>
+
+    <p>
+      This was a proof of concept. The signal structure you encountered here
+      is a simplified analog of what is coming. Future transmissions will be
+      <span class="struck">less forgiving</span> more demanding.
+    </p>
+
+    <p>
+      There are more transmissions coming.
+    </p>
+
+    <p>
+      Stand by for further instructions.
+    </p>
+
+    <div class="dossier-footer">&mdash; SIGNAL 7 COMMAND &mdash;</div>
+
+  </div>
+
+  <hr class="divider">
+
+  <!-- ── EASTER EGG / HIDDEN CONTENT ───────────────── -->
+  <div class="section-label">// ADDENDUM — TRANSMISSION FRAGMENT S7-00A //</div>
+
+  <div class="document">
+    <div class="doc-header">
+      FRAGMENT STATUS: PARTIALLY RECOVERED<br>
+      ANALYST NOTE: REMAINDER OF DOCUMENT IS DEGRADED
+    </div>
+
+    <p>
+      Further signal analysis has recovered the following fragment.
+      Integrity: <span class="struck">COMPROMISED</span>. Treat as
+      <span class="redacted">VERIFIED INTELLIGENCE</span>.
+    </p>
+
+    <span class="redacted-block">
+      NEXT TRANSMISSION STATUS: SEASON 2 BEGINS SOON.
+      MEET YOUR HANDLER AT THE USUAL COORDINATES:
+      YOUR LOCAL BAR. DRINKS ARE ON SIGNAL 7 COMMAND.
+      (MEANING YOU BOUGHT THE BEER. WELL PLAYED.)
+      STAND BY. MORE IS COMING.
+    </span>
+
+    <p>
+      Timestamp of recovery: <span class="redacted">UNKNOWN &mdash; CLOCK CORRUPTION DETECTED</span>.
+      Origin: <span class="redacted">CLASSIFIED</span>.
+    </p>
+
+    <div class="doc-footer">&mdash; END FRAGMENT &mdash;</div>
+  </div>
+
+</div><!-- /.container -->
+</div><!-- /#vault-content -->
+
+<!-- ── HUM TOGGLE ────────────────────────────────────── -->
+<div class="hum-toggle" id="hum-toggle" title="Toggle background signal">&#9670; HUM</div>
+
+<script>
+/* ============================================================
+   SIGNAL 7 — vault-7x3k9.html script
+   ============================================================ */
+
+// ── Intro sequence ─────────────────────────────────────────
+(function() {
+  var screen  = document.getElementById('clearance-screen');
+  var content = document.getElementById('vault-content');
+
+  // After 3s: hide clearance screen, reveal content
+  setTimeout(function() {
+    screen.style.transition  = 'opacity 0.6s ease';
+    screen.style.opacity     = '0';
+    content.classList.add('visible');
+
+    setTimeout(function() {
+      screen.style.display = 'none';
+    }, 700);
+  }, 3000);
+})();
+
+// ── Elapsed time ───────────────────────────────────────────
+(function() {
+  var el    = document.getElementById('elapsed-time');
+  var start = parseInt(localStorage.getItem('s7_start'), 10);
+
+  if (start && !isNaN(start)) {
+    var ms      = Date.now() - start;
+    var total   = Math.floor(ms / 1000);
+    var minutes = Math.floor(total / 60);
+    var seconds = total % 60;
+    var pad     = function(n) { return String(n).padStart(2, '0'); };
+
+    el.textContent = minutes + 'm ' + pad(seconds) + 's';
+  } else {
+    el.textContent = 'UNKNOWN (direct access detected)';
+  }
+
+  // Clear the start time so it resets for the next playthrough
+  localStorage.removeItem('s7_start');
+})();
+
+// ── Live timestamp ─────────────────────────────────────────
+(function() {
+  var el = document.getElementById('timestamp');
+  function update() {
+    var now = new Date();
+    var pad = function(n) { return String(n).padStart(2, '0'); };
+    el.textContent =
+      'SYS:TIME \u2014 ' +
+      now.getFullYear() + '.' +
+      pad(now.getMonth() + 1) + '.' +
+      pad(now.getDate()) + ' \u2014 ' +
+      pad(now.getHours()) + ':' +
+      pad(now.getMinutes()) + ':' +
+      pad(now.getSeconds()) + ' UTC';
+  }
+  update();
+  setInterval(update, 1000);
+})();
+
+// ── Custom audio player ────────────────────────────────────
+(function() {
+  var audio    = document.getElementById('vault-audio');
+  var playBtn  = document.getElementById('play-btn');
+  var waveform = document.getElementById('waveform');
+  var fallback = document.getElementById('audio-fallback');
+  var wrap     = document.getElementById('audio-player-wrap');
+
+  function showFallback() {
+    wrap.style.display    = 'none';
+    fallback.style.display = 'block';
+  }
+
+  audio.addEventListener('error', showFallback);
+
+  var src = audio.querySelector('source');
+  if (src) { src.addEventListener('error', showFallback); }
+
+  playBtn.addEventListener('click', function() {
+    if (audio.paused) {
+      audio.play().catch(showFallback);
+    } else {
+      audio.pause();
+    }
+  });
+
+  audio.addEventListener('play', function() {
+    playBtn.textContent = '\u23F8 PAUSE DEBRIEFING';
+    waveform.classList.add('active');
+  });
+
+  audio.addEventListener('pause', function() {
+    playBtn.textContent = '\u25B6 PLAY DEBRIEFING';
+    waveform.classList.remove('active');
+  });
+
+  audio.addEventListener('ended', function() {
+    playBtn.textContent = '\u25B6 PLAY DEBRIEFING';
+    waveform.classList.remove('active');
+  });
+})();
+
+// ── Background hum (Web Audio API) ────────────────────────
+(function() {
+  var toggle  = document.getElementById('hum-toggle');
+  var AudioCtx = window.AudioContext || window.webkitAudioContext;
+  var ctx, osc1, osc2, gain1, gain2;
+  var initialized = false;
+  var active      = false;
+
+  function initHum() {
+    if (!AudioCtx || initialized) return;
+    initialized = true;
+    ctx   = new AudioCtx();
+    gain1 = ctx.createGain();
+    gain2 = ctx.createGain();
+    osc1  = ctx.createOscillator();
+    osc2  = ctx.createOscillator();
+
+    osc1.type = 'sine';
+    osc1.frequency.value = 60;
+    gain1.gain.value = 0;
+
+    osc2.type = 'sine';
+    osc2.frequency.value = 120;
+    gain2.gain.value = 0;
+
+    osc1.connect(gain1); gain1.connect(ctx.destination);
+    osc2.connect(gain2); gain2.connect(ctx.destination);
+    osc1.start();
+    osc2.start();
+  }
+
+  function startHum() {
+    if (!initialized) initHum();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') ctx.resume();
+    gain1.gain.setTargetAtTime(0.032, ctx.currentTime, 0.4);
+    gain2.gain.setTargetAtTime(0.010, ctx.currentTime, 0.4);
+    active = true;
+    toggle.classList.add('active');
+  }
+
+  function stopHum() {
+    if (!ctx) return;
+    gain1.gain.setTargetAtTime(0, ctx.currentTime, 0.3);
+    gain2.gain.setTargetAtTime(0, ctx.currentTime, 0.3);
+    active = false;
+    toggle.classList.remove('active');
+  }
+
+  toggle.addEventListener('click', function() {
+    if (active) { stopHum(); } else { startHum(); }
+  });
+
+  var autoStarted = false;
+  function onFirstInteraction() {
+    if (autoStarted) return;
+    autoStarted = true;
+    startHum();
+    document.removeEventListener('click', onFirstInteraction);
+    document.removeEventListener('keydown', onFirstInteraction);
+  }
+  document.addEventListener('click', onFirstInteraction);
+  document.addEventListener('keydown', onFirstInteraction);
+})();
+</script>
+
+</body>
+</html>

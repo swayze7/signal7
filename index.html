@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>SIGNAL 7 — INTERCEPT LOG</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ── HEADER ─────────────────────────────────────── -->
+  <header>
+    <h1 class="glitch-title">SIGNAL 7 &mdash; INTERCEPT LOG</h1>
+    <div class="status-line">CLEARANCE STATUS: PENDING</div>
+    <div class="timestamp" id="timestamp">SYS:TIME &mdash; SYNCING...</div>
+  </header>
+
+  <hr class="divider">
+
+  <!-- ── AUDIO SECTION ──────────────────────────────── -->
+  <div class="section-label">// AUDIO FEED //</div>
+
+  <div class="audio-player" id="audio-player-wrap">
+    <audio id="transmission-audio" preload="none">
+      <source src="assets/transmission.mp3" type="audio/mpeg">
+    </audio>
+    <button class="play-btn" id="play-btn">&#9654; PLAY TRANSMISSION</button>
+    <div class="waveform" id="waveform">
+      <span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+    </div>
+  </div>
+  <div class="audio-fallback" id="audio-fallback">
+    [AUDIO FEED UNAVAILABLE &mdash; PROCEED WITH VISUAL ANALYSIS]
+  </div>
+
+  <hr class="divider">
+
+  <!-- ── INTERCEPTED DOCUMENT ───────────────────────── -->
+  <div class="section-label">// INTERCEPTED DOCUMENT — REF: S7-0091 //</div>
+
+  <div class="document">
+
+    <div class="doc-header">
+      FIELD REPORT &mdash; <span class="redacted">EPSILON</span> DIVISION<br>
+      CLASSIFICATION: TOP SECRET // <span class="redacted">UMBRA</span><br>
+      DISTRIBUTION: NEED-TO-KNOW ONLY
+    </div>
+
+    <p>
+      On <span class="struck">██/██/2024</span>, operatives intercepted a signal
+      originating from coordinates <span class="redacted">41.3275° N, 19.8187° E</span>.
+      The transmission contained a repeating sequence that our analysts have
+      designated <strong style="color: var(--text);">SIGNAL 7</strong>.
+    </p>
+
+    <p>
+      Initial decryption efforts have <span class="redacted">failed to yield a complete plaintext.
+      Three analysts have been reassigned pending review.</span> However, partial analysis
+      suggests the signal contains a <em style="color: var(--text-dim);">location key</em>
+      embedded in the following fragment:
+    </p>
+
+    <span class="redacted-block">
+      THE KEY IS VAULT-7X3K9 &mdash; APPEND IT TO THE URL.
+      NAVIGATE TO vault-7x3k9.html TO PROCEED.
+      EXAMPLE: https://[your-domain]/vault-7x3k9.html
+      DO NOT SHARE THIS INFORMATION. EYES ONLY.
+    </span>
+
+    <p>
+      Analysts who have reviewed the fragment report <span class="redacted">severe
+      disorientation and an inability to account for approximately four hours of
+      their working day.</span> Further investigation is classified under
+      Protocol <strong style="color: var(--text);">VAULT-7X3K9</strong>.
+    </p>
+
+    <p>
+      The signal continues to broadcast on a <span class="struck">rotating frequency</span>
+      at irregular intervals. <span class="redacted">We have been unable to locate the
+      source transmitter. It does not appear to be terrestrial.</span>
+    </p>
+
+    <div class="doc-footer">&mdash; END REPORT &mdash;</div>
+
+  </div>
+
+  <!-- ── ACCESS CODE INPUT ──────────────────────────── -->
+  <div class="access-input-wrap">
+    <div class="access-input-row">
+      <input
+        type="text"
+        class="access-input"
+        id="access-input"
+        placeholder="ENTER ACCESS CODE"
+        autocomplete="off"
+        spellcheck="false"
+        maxlength="32"
+      >
+      <button class="submit-btn" id="submit-btn">&gt; SUBMIT</button>
+    </div>
+    <div class="access-msg" id="access-msg"></div>
+  </div>
+
+  <!-- ── HINTS (timed) ──────────────────────────────── -->
+  <div class="hint" id="hint-1">
+    TIP: Not everything hidden stays hidden. Try selecting the redacted text.
+  </div>
+  <div class="hint" id="hint-2">
+    The answer is a URL path. Look for a protocol designation at the end of the report.
+  </div>
+
+</div><!-- /.container -->
+
+<!-- ── HUM TOGGLE ────────────────────────────────────── -->
+<div class="hum-toggle" id="hum-toggle" title="Toggle background signal">&#9670; HUM</div>
+
+<script>
+/* ============================================================
+   SIGNAL 7 — index.html script
+   ============================================================ */
+
+// ── Record start time ──────────────────────────────────────
+if (!localStorage.getItem('s7_start')) {
+  localStorage.setItem('s7_start', Date.now().toString());
+}
+
+// ── Live timestamp ─────────────────────────────────────────
+(function() {
+  const el = document.getElementById('timestamp');
+  function update() {
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    el.textContent =
+      'SYS:TIME \u2014 ' +
+      now.getFullYear() + '.' +
+      pad(now.getMonth() + 1) + '.' +
+      pad(now.getDate()) + ' \u2014 ' +
+      pad(now.getHours()) + ':' +
+      pad(now.getMinutes()) + ':' +
+      pad(now.getSeconds()) + ' UTC';
+  }
+  update();
+  setInterval(update, 1000);
+})();
+
+// ── Custom audio player ────────────────────────────────────
+(function() {
+  const audio    = document.getElementById('transmission-audio');
+  const playBtn  = document.getElementById('play-btn');
+  const waveform = document.getElementById('waveform');
+  const fallback = document.getElementById('audio-fallback');
+  const wrap     = document.getElementById('audio-player-wrap');
+
+  function showFallback() {
+    wrap.style.display = 'none';
+    fallback.style.display = 'block';
+  }
+
+  audio.addEventListener('error', showFallback);
+
+  // Also detect immediately-unplayable sources
+  const src = audio.querySelector('source');
+  if (src) {
+    src.addEventListener('error', showFallback);
+  }
+
+  playBtn.addEventListener('click', function() {
+    if (audio.paused) {
+      audio.play().catch(showFallback);
+    } else {
+      audio.pause();
+    }
+  });
+
+  audio.addEventListener('play', function() {
+    playBtn.textContent = '\u23F8 PAUSE TRANSMISSION';
+    waveform.classList.add('active');
+  });
+
+  audio.addEventListener('pause', function() {
+    playBtn.textContent = '\u25B6 PLAY TRANSMISSION';
+    waveform.classList.remove('active');
+  });
+
+  audio.addEventListener('ended', function() {
+    playBtn.textContent = '\u25B6 PLAY TRANSMISSION';
+    waveform.classList.remove('active');
+  });
+})();
+
+// ── Answer validation (SHA-256 via SubtleCrypto) ───────────
+// The expected hash is computed at runtime from an obfuscated source
+// so the answer string does not appear as plain text in validation logic.
+let _expectedHash = null;
+
+(async function() {
+  // Char codes for V A U L T - 7 X 3 K 9
+  const _k = [86,65,85,76,84,45,55,88,51,75,57]
+              .map(function(c){ return String.fromCharCode(c); })
+              .join('');
+  const enc = new TextEncoder();
+  const buf = await crypto.subtle.digest('SHA-256', enc.encode(_k));
+  _expectedHash = Array.from(new Uint8Array(buf))
+                       .map(function(b){ return b.toString(16).padStart(2,'0'); })
+                       .join('');
+})();
+
+async function hashString(str) {
+  const enc = new TextEncoder();
+  const buf = await crypto.subtle.digest('SHA-256', enc.encode(str));
+  return Array.from(new Uint8Array(buf))
+              .map(function(b){ return b.toString(16).padStart(2,'0'); })
+              .join('');
+}
+
+(function() {
+  const input   = document.getElementById('access-input');
+  const btn     = document.getElementById('submit-btn');
+  const msgEl   = document.getElementById('access-msg');
+
+  async function validate() {
+    const val  = input.value.trim().toUpperCase();
+    if (!val) return;
+
+    const hash = await hashString(val);
+
+    if (_expectedHash && hash === _expectedHash) {
+      window.location.href = 'vault-7x3k9.html';
+      return;
+    }
+
+    // Wrong answer
+    input.value = '';
+    msgEl.className = 'access-msg';
+    void msgEl.offsetWidth; // force reflow to restart animation
+    msgEl.textContent = 'ACCESS DENIED';
+    msgEl.className = 'access-msg denied';
+  }
+
+  btn.addEventListener('click', validate);
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') validate();
+  });
+})();
+
+// ── Hint timers ────────────────────────────────────────────
+setTimeout(function() {
+  document.getElementById('hint-1').classList.add('visible');
+}, 3 * 60 * 1000);
+
+setTimeout(function() {
+  document.getElementById('hint-2').classList.add('visible');
+}, 6 * 60 * 1000);
+
+// ── Background hum (Web Audio API) ────────────────────────
+(function() {
+  const toggle = document.getElementById('hum-toggle');
+  let AudioCtx = window.AudioContext || window.webkitAudioContext;
+  let ctx, osc1, osc2, gain1, gain2;
+  let initialized = false;
+  let active = false;
+
+  function initHum() {
+    if (!AudioCtx || initialized) return;
+    initialized = true;
+    ctx   = new AudioCtx();
+    gain1 = ctx.createGain();
+    gain2 = ctx.createGain();
+    osc1  = ctx.createOscillator();
+    osc2  = ctx.createOscillator();
+
+    osc1.type = 'sine';
+    osc1.frequency.value = 60;
+    gain1.gain.value = 0;
+
+    osc2.type = 'sine';
+    osc2.frequency.value = 120;
+    gain2.gain.value = 0;
+
+    osc1.connect(gain1); gain1.connect(ctx.destination);
+    osc2.connect(gain2); gain2.connect(ctx.destination);
+    osc1.start();
+    osc2.start();
+  }
+
+  function startHum() {
+    if (!initialized) initHum();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') ctx.resume();
+    gain1.gain.setTargetAtTime(0.032, ctx.currentTime, 0.4);
+    gain2.gain.setTargetAtTime(0.010, ctx.currentTime, 0.4);
+    active = true;
+    toggle.classList.add('active');
+  }
+
+  function stopHum() {
+    if (!ctx) return;
+    gain1.gain.setTargetAtTime(0, ctx.currentTime, 0.3);
+    gain2.gain.setTargetAtTime(0, ctx.currentTime, 0.3);
+    active = false;
+    toggle.classList.remove('active');
+  }
+
+  toggle.addEventListener('click', function() {
+    if (active) { stopHum(); } else { startHum(); }
+  });
+
+  // Auto-start on first page interaction
+  let autoStarted = false;
+  function onFirstInteraction() {
+    if (autoStarted) return;
+    autoStarted = true;
+    startHum();
+    document.removeEventListener('click', onFirstInteraction);
+    document.removeEventListener('keydown', onFirstInteraction);
+  }
+  document.addEventListener('click', onFirstInteraction);
+  document.addEventListener('keydown', onFirstInteraction);
+})();
+</script>
+
+</body>
+</html>
