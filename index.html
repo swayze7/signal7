@@ -62,14 +62,15 @@
 
     <p>
       Initial decryption efforts have <span class="redacted">failed to yield a complete plaintext.
-      Three analysts have been reassigned pending review.</span> However, partial analysis
-      suggests the signal contains a <em style="color: var(--text-dim);">location key</em>
-      embedded in the following fragment:
+      Three analysts have been reassigned pending review.</span> Partial analysis has recovered
+      a fragment designator: <strong style="color: var(--text);">-7X3K9</strong>.
+      The prefix designation has not been recovered through visual analysis alone &mdash;
+      it is believed to be encoded within the secondary audio signal.
     </p>
 
     <span class="redacted-block">
-      LOCATION KEY: VAULT-7X3K9.
-      APPEND TO CURRENT URL PATH TO ACCESS SECURE CHANNEL.
+      COMBINE AUDIO PREFIX WITH RECOVERED FRAGMENT DESIGNATOR.
+      USE COMPLETE IDENTIFIER TO ACCESS SECURE CHANNEL.
       EYES ONLY. DO NOT TRANSMIT.
     </span>
 
@@ -77,7 +78,7 @@
       Analysts who have reviewed the fragment report <span class="redacted">severe
       disorientation and an inability to account for approximately four hours of
       their working day.</span> Further investigation is classified under
-      Protocol <span class="redacted">VAULT-7X3K9</span>.
+      Protocol <span class="redacted">CLASSIFIED</span>.
     </p>
 
     <p>
@@ -226,11 +227,11 @@ if (!localStorage.getItem('s7_start')) {
   };
 
   var indicator = document.getElementById('morse-indicator');
-  var triggered = false;
+  var morseActive = false; // allows replay after each transmission
 
   window._triggerMorse = function() {
-    if (triggered) return;
-    triggered = true;
+    if (morseActive) return; // prevent overlap if triggered mid-play
+    morseActive = true;
 
     var AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
@@ -251,8 +252,8 @@ if (!localStorage.getItem('s7_start')) {
       osc.connect(gainNode);
       osc.start(ctx.currentTime);
 
-      // Message encoded as char codes — not stored as a plain string in source
-      var message = [86,65,85,76,84,32,55,88,51,75,57]
+      // Message encoded as char codes: "VAULT" — player combines with visible -7X3K9
+      var message = [86,65,85,76,84]
                       .map(function(c){ return String.fromCharCode(c); }).join('');
 
       var t = ctx.currentTime + 0.4;
@@ -288,6 +289,7 @@ if (!localStorage.getItem('s7_start')) {
       if (indicator) indicator.classList.add('active');
       setTimeout(function() {
         if (indicator) indicator.classList.remove('active');
+        morseActive = false; // allow replay on next transmission
       }, (endTime - ctx.currentTime) * 1000);
     });
   };
