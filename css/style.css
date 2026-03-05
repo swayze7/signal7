@@ -605,6 +605,18 @@ body::after {
   color: var(--text);
 }
 
+/* ---- Tap-to-reveal (touch devices) ---- */
+.redacted.revealed {
+  color: #0a0a0a;
+  background-color: #33ff33;
+}
+
+.redacted-block.revealed {
+  color: #0a0a0a;
+  background-color: #33ff33;
+  border-left-color: #33ff33;
+}
+
 /* ---- Morse indicator ---- */
 .morse-indicator {
   display: flex;

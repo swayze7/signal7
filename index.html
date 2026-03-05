@@ -352,6 +352,23 @@ async function hashString(str) {
   });
 })();
 
+// ── Touch-to-reveal for mobile (selection doesn't work on iOS) ─
+(function() {
+  var isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  if (!isTouch) return;
+
+  document.querySelectorAll('.redacted, .redacted-block').forEach(function(el) {
+    el.addEventListener('click', function(e) {
+      el.classList.toggle('revealed');
+      e.stopPropagation();
+    });
+  });
+
+  // Update hint text to say tap instead of select
+  document.getElementById('hint-1').textContent =
+    'TIP: Not everything hidden stays hidden. Try tapping the redacted sections.';
+})();
+
 // ── Hint timers ────────────────────────────────────────────
 setTimeout(function() {
   document.getElementById('hint-1').classList.add('visible');
