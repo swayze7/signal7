@@ -227,71 +227,73 @@ if (!localStorage.getItem('s7_start')) {
   };
 
   var indicator = document.getElementById('morse-indicator');
-  var morseActive = false; // allows replay after each transmission
+  var morseActive = false;
+
+  // Create context once at startup — it starts suspended, resumed on first click.
+  // Reusing the same context avoids the "new context inside setTimeout" autoplay block.
+  var AC = window.AudioContext || window.webkitAudioContext;
+  var ctx = AC ? new AC() : null;
+
+  document.addEventListener('click', function() {
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+  });
+
+  function playMorse() {
+    var unit = 0.10; // 100ms per dot
+
+    var gainNode = ctx.createGain();
+    gainNode.gain.value = 0;
+    gainNode.connect(ctx.destination);
+
+    var osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = 660;
+    osc.connect(gainNode);
+    osc.start(ctx.currentTime);
+
+    // "VAULT" — player combines with the visible -7X3K9 fragment designator
+    var message = [86,65,85,76,84]
+                    .map(function(c){ return String.fromCharCode(c); }).join('');
+
+    var t = ctx.currentTime + 0.4;
+    var firstChar = true;
+    var chars = message.split('');
+
+    for (var i = 0; i < chars.length; i++) {
+      var ch = chars[i];
+      if (ch === ' ') { t += unit * 4; continue; }
+      var code = MORSE[ch];
+      if (!code) continue;
+      if (!firstChar) t += unit * 3;
+      firstChar = false;
+      for (var j = 0; j < code.length; j++) {
+        if (j > 0) t += unit;
+        var dur = code[j] === '.' ? unit : unit * 3;
+        gainNode.gain.setValueAtTime(0.3, t);
+        t += dur;
+        gainNode.gain.setValueAtTime(0, t);
+      }
+    }
+
+    var endTime = t + 0.4;
+    osc.stop(endTime);
+
+    if (indicator) indicator.classList.add('active');
+    setTimeout(function() {
+      if (indicator) indicator.classList.remove('active');
+      morseActive = false;
+    }, (endTime - ctx.currentTime) * 1000);
+  }
 
   window._triggerMorse = function() {
-    if (morseActive) return; // prevent overlap if triggered mid-play
+    if (morseActive || !ctx) return;
     morseActive = true;
 
-    var AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
-
-    var ctx = new AC();
-
-    // Resume must resolve before scheduling — browsers suspend new contexts
-    ctx.resume().then(function() {
-      var unit = 0.10; // 100ms per dot
-
-      var gainNode = ctx.createGain();
-      gainNode.gain.value = 0;
-      gainNode.connect(ctx.destination);
-
-      var osc = ctx.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.value = 660;
-      osc.connect(gainNode);
-      osc.start(ctx.currentTime);
-
-      // Message encoded as char codes: "VAULT" — player combines with visible -7X3K9
-      var message = [86,65,85,76,84]
-                      .map(function(c){ return String.fromCharCode(c); }).join('');
-
-      var t = ctx.currentTime + 0.4;
-      var firstChar = true;
-
-      var chars = message.split('');
-      for (var i = 0; i < chars.length; i++) {
-        var ch = chars[i];
-
-        if (ch === ' ') {
-          t += unit * 4; // word gap (next letter adds 3 more = 7 total)
-          continue;
-        }
-
-        var code = MORSE[ch];
-        if (!code) continue;
-
-        if (!firstChar) t += unit * 3; // inter-letter gap
-        firstChar = false;
-
-        for (var j = 0; j < code.length; j++) {
-          if (j > 0) t += unit; // inter-element gap
-          var dur = code[j] === '.' ? unit : unit * 3;
-          gainNode.gain.setValueAtTime(0.3, t);
-          t += dur;
-          gainNode.gain.setValueAtTime(0, t);
-        }
-      }
-
-      var endTime = t + 0.4;
-      osc.stop(endTime);
-
-      if (indicator) indicator.classList.add('active');
-      setTimeout(function() {
-        if (indicator) indicator.classList.remove('active');
-        morseActive = false; // allow replay on next transmission
-      }, (endTime - ctx.currentTime) * 1000);
-    });
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(playMorse);
+    } else {
+      playMorse();
+    }
   };
 })();
 
