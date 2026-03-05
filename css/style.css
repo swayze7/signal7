@@ -606,6 +606,10 @@ body::after {
 }
 
 /* ---- Tap-to-reveal (touch devices) ---- */
+/* cursor: pointer is required for iOS Safari to fire touch/click events on spans */
+.redacted         { cursor: pointer; }
+.redacted-block   { cursor: pointer; }
+
 .redacted.revealed {
   color: #0a0a0a;
   background-color: #33ff33;

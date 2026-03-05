@@ -358,9 +358,10 @@ async function hashString(str) {
   if (!isTouch) return;
 
   document.querySelectorAll('.redacted, .redacted-block').forEach(function(el) {
-    el.addEventListener('click', function(e) {
+    // touchend + preventDefault is more reliable than click on iOS Safari
+    el.addEventListener('touchend', function(e) {
+      e.preventDefault(); // stops the delayed synthetic click from also firing
       el.classList.toggle('revealed');
-      e.stopPropagation();
     });
   });
 
